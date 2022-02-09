@@ -23,6 +23,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 import com.android.settings.intelligence.R;
 import com.android.settings.intelligence.overlay.FeatureFactory;
@@ -33,8 +34,7 @@ import com.android.settings.intelligence.search.SearchResultsAdapter;
 
 import java.util.List;
 
-public class SavedQueryController implements LoaderManager.LoaderCallbacks,
-        MenuItem.OnMenuItemClickListener {
+public class SavedQueryController implements LoaderManager.LoaderCallbacks {
 
     // TODO: make a generic background task manager to handle one-off tasks like this one.
     private static final String ARG_QUERY = "remove_query";
@@ -46,6 +46,8 @@ public class SavedQueryController implements LoaderManager.LoaderCallbacks,
     private final LoaderManager mLoaderManager;
     private final SearchFeatureProvider mSearchFeatureProvider;
     private final SearchResultsAdapter mResultAdapter;
+    private MenuItem mItem;
+    private View mHistoryLayout;
 
     public SavedQueryController(Context context, LoaderManager loaderManager,
             SearchResultsAdapter resultsAdapter) {
@@ -55,6 +57,8 @@ public class SavedQueryController implements LoaderManager.LoaderCallbacks,
         mSearchFeatureProvider = FeatureFactory.get(context)
                 .searchFeatureProvider();
     }
+
+
 
     @Override
     public Loader onCreateLoader(int id, Bundle args) {
@@ -75,12 +79,23 @@ public class SavedQueryController implements LoaderManager.LoaderCallbacks,
             case SearchFragment.SearchLoaderId.REMOVE_QUERY_TASK:
                 mLoaderManager.restartLoader(SearchFragment.SearchLoaderId.SAVED_QUERIES,
                         null /* args */, this /* callback */);
+                // Add for Bug#1113499: update the view when remove saved queries
+                mResultAdapter.displaySavedQuery((List<SearchResult>) data);
                 break;
             case SearchFragment.SearchLoaderId.SAVED_QUERIES:
                 if (SearchFeatureProvider.DEBUG) {
                     Log.d(TAG, "Saved queries loaded");
                 }
-                mResultAdapter.displaySavedQuery((List<SearchResult>) data);
+                /* Modify for Bug#1113499: update the view when remove saved queries @{ */
+                List<SearchResult> results = (List<SearchResult>) data;
+                if (null != results && !results.isEmpty()) {
+                    mResultAdapter.displaySavedQuery((List<SearchResult>) results);
+                }
+                if (mHistoryLayout != null) {
+                    mHistoryLayout.setVisibility(mResultAdapter.getItemCount() > 0 ? View.VISIBLE : View.GONE);
+                }
+                // mItem.setEnabled(mResultAdapter.getItemCount() > 0);
+                /* @} */
                 break;
         }
     }
@@ -89,19 +104,27 @@ public class SavedQueryController implements LoaderManager.LoaderCallbacks,
     public void onLoaderReset(Loader loader) {
     }
 
-    @Override
-    public boolean onMenuItemClick(MenuItem item) {
-        if (item.getItemId() != MENU_SEARCH_HISTORY) {
-            return false;
-        }
-        removeQueries();
-        return true;
-    }
+//    @Override
+//    public boolean onMenuItemClick(MenuItem item) {
+//        if (item.getItemId() != MENU_SEARCH_HISTORY) {
+//            return false;
+//        }
+//        removeQueries();
+//        return true;
+//    }
+//
+//    public void buildMenuItem(Menu menu) {
+//        menu.clear();
+//        MenuItem item =
+//                menu.add(Menu.NONE, MENU_SEARCH_HISTORY, Menu.NONE, R.string.search_clear_history);
+//        item.setOnMenuItemClickListener(this);
+//        // Add for Bug#1113499: set item disabled when history list is empty.
+//        item.setEnabled(mResultAdapter.getItemCount() > 0);
+//        mItem = item;
+//    }
 
-    public void buildMenuItem(Menu menu) {
-        final MenuItem item =
-                menu.add(Menu.NONE, MENU_SEARCH_HISTORY, Menu.NONE, R.string.search_clear_history);
-        item.setOnMenuItemClickListener(this);
+    public void setHistoryLayout(View historyLayout) {
+        mHistoryLayout = historyLayout;
     }
 
     public void saveQuery(String query) {

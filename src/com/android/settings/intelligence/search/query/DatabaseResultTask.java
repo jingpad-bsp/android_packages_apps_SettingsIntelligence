@@ -187,7 +187,7 @@ public class DatabaseResultTask extends SearchQueryTask.QueryWorker {
      */
     private Set<SearchResult> secondaryWordQuery(String[] matchColumns, int baseRank) {
         final String whereClause = buildSingleWordWhereClause(matchColumns);
-        final String query = "% " + mQuery + "%";
+        final String query = "%" + mQuery + "%";
         final String[] selection = buildSingleWordSelection(query, matchColumns.length);
 
         return query(whereClause, selection, baseRank);

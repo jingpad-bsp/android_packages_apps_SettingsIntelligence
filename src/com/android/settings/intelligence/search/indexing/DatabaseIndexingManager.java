@@ -103,7 +103,7 @@ public class DatabaseIndexingManager {
                 mContext.getPackageManager().queryIntentContentProviders(intent, 0);
 
         final boolean isFullIndex = IndexDatabaseHelper.isFullIndex(mContext, providers);
-
+        Log.d(TAG, "performIndexing isFullIndex:" + isFullIndex);
         if (isFullIndex) {
             rebuildDatabase();
         }

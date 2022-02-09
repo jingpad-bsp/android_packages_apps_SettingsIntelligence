@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2016 The Android Open Source Project
+<?xml version="1.0" encoding="utf-8"?><!-- Copyright (C) 2016 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -13,8 +12,7 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/search_panel"
     android:layout_width="match_parent"
@@ -25,34 +23,76 @@
         android:id="@+id/search_bar_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/search_panel_background"
+        android:paddingStart="@dimen/dashboard_tile_image_margin"
+        android:paddingEnd="@dimen/dashboard_tile_image_margin"
+        android:paddingTop="@dimen/dashboard_tile_image_margin"
         android:elevation="4dp">
-        <androidx.cardview.widget.CardView
-            android:id="@+id/search_bar"
+
+        <Toolbar
+            android:id="@+id/search_toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/search_bar_margin"
-            app:cardCornerRadius="2dp"
-            app:cardBackgroundColor="?android:attr/colorBackground"
-            app:cardElevation="2dp">
-            <Toolbar
-                android:id="@+id/search_toolbar"
+            android:contentInsetStart="0dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
+            android:contentInsetStartWithNavigation="0dp"
+            android:theme="?android:attr/actionBarTheme">
+
+            <LinearLayout
+                android:gravity="center_vertical"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/search_bar_height"
-                android:background="?android:attr/selectableItemBackground"
-                android:contentInsetStart="0dp"
-                android:contentInsetStartWithNavigation="0dp"
-                android:theme="?android:attr/actionBarTheme">
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
                 <SearchView
                     android:id="@+id/search_view"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:background="@drawable/jing_search_bar_background"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="@dimen/search_bar_height"
                     android:iconifiedByDefault="false"
+                    android:layout_marginEnd="14dp"
+                    android:queryHint="@string/search_hint"
                     android:imeOptions="actionSearch|flagNoExtractUi"
-                    android:searchIcon="@null"/>
-            </Toolbar>
-        </androidx.cardview.widget.CardView>
+                    android:searchIcon="@drawable/ic_search2"
+                    android:closeIcon="@drawable/ic_search_clear"/>
+
+                <TextView
+                    android:id="@+id/cancel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/primaryColor"
+                    android:textSize="20sp"
+                    android:text="@string/search_cancel" />
+
+            </LinearLayout>
+        </Toolbar>
     </FrameLayout>
+
+    <RelativeLayout
+        android:id="@+id/history_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/dashboard_tile_image_margin"
+        android:paddingEnd="@dimen/dashboard_tile_image_margin"
+        android:paddingBottom="14dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textColor="?android:attr/textColorPrimary"
+            android:text="@string/search_history" />
+
+        <TextView
+            android:id="@+id/clear_history"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:textColor="@color/primaryColor"
+            android:textSize="16sp"
+            android:text="@string/search_clear_history" />
+    </RelativeLayout>
 
     <FrameLayout
         android:id="@+id/layout_results"
@@ -62,47 +102,44 @@
         android:orientation="vertical">
 
         <!-- Padding is included in the background -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/list_results"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingStart="@dimen/dashboard_padding_start"
-            android:paddingEnd="@dimen/dashboard_padding_end"
-            android:paddingTop="@dimen/dashboard_padding_top"
-            android:paddingBottom="@dimen/dashboard_padding_bottom"
-            android:scrollbarStyle="outsideOverlay"
-            android:scrollbars="vertical"/>
-
         <LinearLayout
             android:id="@+id/no_results_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingTop="35dp"
+            android:layout_marginTop="123dp"
             android:orientation="vertical"
             android:visibility="gone">
 
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="?android:attr/actionBarSize"/>
-
             <ImageView
-                android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:src="@drawable/empty_search_results"/>
+                android:src="@drawable/empty_search_results2" />
 
             <TextView
-                android:layout_height="wrap_content"
                 android:layout_width="match_parent"
-                android:paddingTop="24dp"
-                android:textSize="18sp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:textColor="@color/empty_text_color"
                 android:text="@string/search_no_results"
-                android:gravity="center"/>
+                android:textSize="16sp" />
 
         </LinearLayout>
 
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/list_results"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="@dimen/dashboard_padding_bottom"
+            android:paddingEnd="@dimen/dashboard_padding_end"
+            android:paddingStart="@dimen/dashboard_padding_start"
+            android:paddingTop="@dimen/dashboard_padding_top"
+            android:scrollbarStyle="outsideOverlay"
+            android:scrollbars="vertical" />
+
     </FrameLayout>
 
-    <include layout="@layout/search_feedback"/>
+    <include layout="@layout/search_feedback" />
 
 </LinearLayout>

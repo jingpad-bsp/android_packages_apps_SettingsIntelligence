@@ -26,6 +26,7 @@ import android.content.Context;
 import android.content.Loader;
 import android.os.Bundle;
 import androidx.annotation.VisibleForTesting;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.text.TextUtils;
@@ -34,6 +35,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -61,9 +63,9 @@ import java.util.List;
  * the query if the user has entered text.
  */
 public class SearchFragment extends Fragment implements SearchView.OnQueryTextListener,
-        LoaderManager.LoaderCallbacks<List<? extends SearchResult>>, IndexingCallback {
+        LoaderManager.LoaderCallbacks<List<? extends SearchResult>>, IndexingCallback, View.OnClickListener {
     private static final String TAG = "SearchFragment";
-
+    private static final int MENU_SEARCH_CANCEL = 1;
     // State values
     private static final String STATE_QUERY = "state_query";
     private static final String STATE_SHOWING_SAVED_QUERY = "state_showing_saved_query";
@@ -78,6 +80,8 @@ public class SearchFragment extends Fragment implements SearchView.OnQueryTextLi
         public static final int REMOVE_QUERY_TASK = 3;
         public static final int SAVED_QUERIES = 4;
     }
+    // Add for Bug#1113499: Limit the max length of query text
+    private static final int MAX_LEN = 100;
 
     @VisibleForTesting
     String mQuery;
@@ -103,6 +107,8 @@ public class SearchFragment extends Fragment implements SearchView.OnQueryTextLi
     SearchView mSearchView;
     @VisibleForTesting
     LinearLayout mNoResultsView;
+
+    private View mHistoryLayout;
 
     @VisibleForTesting
     final RecyclerView.OnScrollListener mScrollListener = new RecyclerView.OnScrollListener() {
@@ -149,7 +155,19 @@ public class SearchFragment extends Fragment implements SearchView.OnQueryTextLi
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        mSavedQueryController.buildMenuItem(menu);
+        Log.d(TAG, "onCreateOptionsMenu");
+        // mSavedQueryController.buildMenuItem(menu);
+    }
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == MENU_SEARCH_CANCEL) {
+            getActivity().finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+
     }
 
     @Override
@@ -163,17 +181,26 @@ public class SearchFragment extends Fragment implements SearchView.OnQueryTextLi
         mResultsRecyclerView.addOnScrollListener(mScrollListener);
 
         mNoResultsView = view.findViewById(R.id.no_results_layout);
-
+        View clearHistory = view.findViewById(R.id.clear_history);
+        mHistoryLayout = view.findViewById(R.id.history_layout);
+        mSavedQueryController.setHistoryLayout(mHistoryLayout);
+        clearHistory.setOnClickListener(this);
         final Toolbar toolbar = view.findViewById(R.id.search_toolbar);
         activity.setActionBar(toolbar);
-        activity.getActionBar().setDisplayHomeAsUpEnabled(true);
+        // activity.getActionBar().setDisplayHomeAsUpEnabled(true);
 
         mSearchView = toolbar.findViewById(R.id.search_view);
         mSearchView.setQuery(mQuery, false /* submitQuery */);
         mSearchView.setOnQueryTextListener(this);
         mSearchView.requestFocus();
+        toolbar.findViewById(R.id.cancel).setOnClickListener(v -> getActivity().finish());
 
         return view;
+    }
+
+    @Override
+    public void onClick(View v) {
+        mSavedQueryController.removeQueries();
     }
 
     @Override
@@ -227,7 +254,8 @@ public class SearchFragment extends Fragment implements SearchView.OnQueryTextLi
                 && query.length() < mQuery.length()) {
             mNoResultsView.setVisibility(View.GONE);
         }
-
+        // Add for Bug#1113499: Limit the max length of query text
+        query = getLimitedQueryText(query);
         mNeverEnteredQuery = false;
         mQuery = query;
 
@@ -235,20 +263,34 @@ public class SearchFragment extends Fragment implements SearchView.OnQueryTextLi
         if (!mSearchFeatureProvider.isIndexingComplete(getActivity())) {
             return true;
         }
-
         if (isEmptyQuery) {
             final LoaderManager loaderManager = getLoaderManager();
             loaderManager.destroyLoader(SearchLoaderId.SEARCH_RESULT);
             mShowingSavedQuery = true;
+            mHistoryLayout.setVisibility(View.VISIBLE);
             mSavedQueryController.loadSavedQueries();
             mSearchFeatureProvider.hideFeedbackButton(getView());
+            mSearchAdapter.clearResults();
+            mSearchAdapter.notifyDataSetChanged();
         } else {
+            mHistoryLayout.setVisibility(View.GONE);
             mMetricsFeatureProvider.logEvent(SettingsIntelligenceEvent.PERFORM_SEARCH);
             restartLoaders();
         }
 
         return true;
     }
+
+    /* Add for Bug#1113499: Limit the max length of query text @{ */
+    private String getLimitedQueryText(String query) {
+       int len = query.length();
+       if (len > MAX_LEN) {
+           query = query.substring(0, MAX_LEN);
+           mSearchView.setQuery(query, false /* submitQuery */);
+       }
+       return query;
+    }
+    /* @ */
 
     @Override
     public boolean onQueryTextSubmit(String query) {
@@ -359,9 +401,12 @@ public class SearchFragment extends Fragment implements SearchView.OnQueryTextLi
         final Activity activity = getActivity();
         if (activity != null) {
             View view = activity.getCurrentFocus();
-            InputMethodManager imm = (InputMethodManager)
-                    activity.getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            // Add for Bug#1113499: Prevent NPE
+            if (null != view) {
+                InputMethodManager imm = (InputMethodManager)
+                        activity.getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            }
         }
 
         if (mResultsRecyclerView != null) {

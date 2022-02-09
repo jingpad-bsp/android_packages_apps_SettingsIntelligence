@@ -35,6 +35,7 @@
 
     <!-- Button to clear all search history in Settings [CHAR LIMIT=40]-->
     <string name="search_clear_history">Clear history</string>
+    <string name="search_history">Search history</string>
 
     <!-- DO NOT TRANSLATE Summary placeholder -->
     <string name="summary_placeholder" translatable="false">&#160;</string>
@@ -45,4 +46,8 @@
     </string>
 
     <string name="search_no_results">No results</string>
+
+    <string name="search_hint">Search settings</string>
+    <string name="search_cancel">Cancel</string>
+
 </resources>
